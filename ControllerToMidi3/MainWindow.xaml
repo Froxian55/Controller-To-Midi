@@ -1,0 +1,330 @@
+﻿<Window x:Class="ControllerToMidi3.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ControllerToMidi3"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Background="Transparent"
+        AllowsTransparency="True"
+        Title="Controller → MIDI Pedal"
+        Height="780" Width="1020"
+        FontFamily="Segoe UI">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <local:ProgressToWidthConverter x:Key="ProgressWidth"/>
+
+        <!-- Palette -->
+        <SolidColorBrush x:Key="Bg" Color="#0f0f1a"/>
+        <SolidColorBrush x:Key="Surface" Color="#1a1a2e"/>
+        <SolidColorBrush x:Key="SurfaceElevated" Color="#23233a"/>
+        <SolidColorBrush x:Key="Border" Color="#2e2e48"/>
+        <SolidColorBrush x:Key="Accent" Color="#4a90e2"/>
+        <SolidColorBrush x:Key="AccentHover" Color="#5aa0f2"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#f0f0f5"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#8888a0"/>
+        <SolidColorBrush x:Key="Danger" Color="#e74c3c"/>
+        <SolidColorBrush x:Key="Success" Color="#2ecc71"/>
+
+        <!-- Card style -->
+        <Style TargetType="Border" x:Key="Card">
+            <Setter Property="Background" Value="{StaticResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+        </Style>
+
+        <!-- Title bar buttons -->
+        <Style TargetType="Button" x:Key="TitleBarBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="45"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2e2e48"/>
+                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                </Trigger>
+                <Trigger Property="Name" Value="CloseBtn">
+                    <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Accent button (Start) -->
+        <Style TargetType="Button" x:Key="AccentBtn">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AccentHover}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#333"/>
+                    <Setter Property="Foreground" Value="#777"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Button" x:Key="GhostBtn">
+            <Setter Property="Background" Value="{StaticResource SurfaceElevated}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2a2a44"/>
+                    <Setter Property="BorderBrush" Value="#3e3e5e"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ComboBox -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- TextBox -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource SurfaceElevated}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- Slider -->
+        <Style TargetType="Slider">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid>
+                            <Track x:Name="PART_Track" Height="4" VerticalAlignment="Center" Margin="0">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Style="{x:Null}"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Style="{x:Null}"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Background="{StaticResource Accent}" Width="16" Height="16" BorderThickness="0" VerticalAlignment="Center">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="8"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- CheckBox -->
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- ProgressBar -->
+        <Style TargetType="ProgressBar">
+            <Setter Property="Background" Value="{StaticResource SurfaceElevated}"/>
+            <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Height="{TemplateBinding Height}">
+                            <Border Background="{TemplateBinding Foreground}" CornerRadius="4" HorizontalAlignment="Left">
+                                <Border.Width>
+                                    <MultiBinding Converter="{StaticResource ProgressWidth}">
+                                        <Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                        <Binding Path="ActualWidth" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                        <Binding Path="Maximum" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                    </MultiBinding>
+                                </Border.Width>
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ScrollViewer -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{StaticResource Bg}" CornerRadius="12" BorderBrush="{StaticResource Border}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="45"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title Bar -->
+            <Border Grid.Row="0" Background="{StaticResource Surface}" CornerRadius="12,12,0,0" Padding="16,0" MouseDown="TitleBar_MouseDown">
+                <Grid>
+                    <TextBlock Text="Controller → MIDI Pedal" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" FontSize="13"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="MinBtn" Content="−" Style="{StaticResource TitleBarBtn}" Click="MinBtn_Click"/>
+                        <Button x:Name="MaxBtn" Content="□" Style="{StaticResource TitleBarBtn}" Click="MaxBtn_Click"/>
+                        <Button x:Name="CloseBtn" Content="✕" Style="{StaticResource TitleBarBtn}" Click="CloseBtn_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Header Controls -->
+            <Border Grid.Row="1" Background="{StaticResource SurfaceElevated}" Padding="18,14,18,14">
+                <WrapPanel>
+                    <TextBlock Text="Controller" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12" Margin="0,0,8,0" Foreground="{StaticResource TextSecondary}"/>
+                    <ComboBox ItemsSource="{Binding Controllers}" SelectedItem="{Binding SelectedController}" DisplayMemberPath="Name" Width="220" MinWidth="180" Margin="0,0,6,0"/>
+                    <Button Content="↺" Command="{Binding RefreshControllersCommand}" Width="32" Height="32" Style="{StaticResource GhostBtn}" Margin="0,0,10,0"/>
+
+                    <TextBlock Text="MIDI" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12" Margin="0,0,8,0" Foreground="{StaticResource TextSecondary}"/>
+                    <ComboBox ItemsSource="{Binding MidiDevices}" SelectedItem="{Binding SelectedMidiDevice}" Width="240" MinWidth="200" Margin="0,0,6,0"/>
+
+                    <TextBlock Text="Ch" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12" Margin="0,0,6,0" Foreground="{StaticResource TextSecondary}"/>
+                    <TextBox Text="{Binding Channel, UpdateSourceTrigger=PropertyChanged}" Width="40" Height="32" VerticalContentAlignment="Center" Margin="0,0,10,0"/>
+
+                    <Button Content="Start" Command="{Binding StartCommand}" Style="{StaticResource AccentBtn}" Padding="18,8" Margin="0,0,6,0"/>
+                    <Button Content="Stop" Command="{Binding StopCommand}" Style="{StaticResource GhostBtn}" Padding="18,8" Margin="0,0,6,0"/>
+                    <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource GhostBtn}" Padding="18,8" Margin="0,0,0,0"/>
+
+                    <TextBlock Text="{Binding IsRunning, StringFormat=Running: {0}}" VerticalAlignment="Center" Margin="14,0,8,0" FontSize="11" Foreground="{StaticResource TextSecondary}"/>
+                    <TextBlock Text="{Binding IsConnected, StringFormat=Ctrl: {0}}" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextSecondary}"/>
+                </WrapPanel>
+            </Border>
+
+            <!-- Learning hint -->
+            <TextBlock Grid.Row="1" Text="{Binding LearningHint}" Foreground="{StaticResource Danger}" FontWeight="Bold" Visibility="{Binding IsLearning, Converter={StaticResource BoolToVis}}" Margin="18,4,18,8"/>
+
+            <!-- Pedal Cards -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="18,0,18,18">
+                <ItemsControl ItemsSource="{Binding Pedals}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Card}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Title + live bar -->
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="70"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding PedalLabel}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"/>
+                                        <ProgressBar Grid.Column="1" Value="{Binding LiveValue}" Maximum="127" Height="6" VerticalAlignment="Center" Margin="14,4,0,4"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding LiveValue, StringFormat={}{0}}" VerticalAlignment="Center" HorizontalAlignment="Right" FontFamily="Consolas" FontSize="12" Foreground="{StaticResource TextSecondary}"/>
+                                    </Grid>
+
+                                    <!-- Controls -->
+                                    <Grid Grid.Row="1" Margin="0,14,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Content="{Binding LearnButtonText}" Command="{Binding DataContext.LearnCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Padding="10,4">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource GhostBtn}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCapturing}" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource Danger}"/>
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <TextBlock Grid.Column="1" Text="{Binding SourceName}" VerticalAlignment="Center" Margin="10,0,0,0" FontFamily="Consolas" FontSize="12" Foreground="{StaticResource TextSecondary}"/>
+                                        <ComboBox Grid.Column="2" SelectedItem="{Binding Mode}" Height="28" Margin="0,0,0,0">
+                                            <ComboBoxItem Content="Analog"/>
+                                            <ComboBoxItem Content="Threshold"/>
+                                        </ComboBox>
+                                        <CheckBox Grid.Column="3" Content="Invert" IsChecked="{Binding Invert}" VerticalAlignment="Center" Margin="0,0,0,0" Foreground="{StaticResource TextPrimary}"/>
+                                    </Grid>
+
+                                    <!-- Sliders -->
+                                    <Grid Grid.Row="2" Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="{Binding DeadzonePct, StringFormat=Deadzone: {0}%}" FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                            <Slider Value="{Binding DeadzonePct}" Minimum="0" Maximum="50" Height="12" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                            <TextBlock Text="{Binding ThresholdPct, StringFormat=Threshold: {0}%}" FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                            <Slider Value="{Binding ThresholdPct}" Minimum="5" Maximum="99" Height="12" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</Window>
