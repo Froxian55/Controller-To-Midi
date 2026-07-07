@@ -1,0 +1,32 @@
+{
+  "lang": "en",
+  "controller": "0: Wired Wheel",
+  "midi_port": "loopMIDI Port 5 6",
+  "midi_channel": 1,
+  "mappings": [
+    {
+      "input_type": "axis",
+      "index": 2,
+      "axis_mode": "analog",
+      "axis_threshold": 0.5,
+      "axis_deadzone": 0.1,
+      "axis_inverted": false
+    },
+    {
+      "input_type": "axis",
+      "index": 3,
+      "axis_mode": "analog",
+      "axis_threshold": 0.5,
+      "axis_deadzone": 0.1,
+      "axis_inverted": false
+    },
+    {
+      "input_type": "axis",
+      "index": 1,
+      "axis_mode": "analog",
+      "axis_threshold": 0.5,
+      "axis_deadzone": 0.1,
+      "axis_inverted": false
+    }
+  ]
+}
