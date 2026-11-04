@@ -1,0 +1,59 @@
+{
+  "name": "controller-to-midi",
+  "version": "2.0.0",
+  "private": true,
+  "author": "Froxian55",
+  "description": "Turn game controllers into MIDI expression pedals and switches.",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && esbuild src/renderer/ui.ts --bundle --platform=browser --target=chrome130 --outfile=dist/renderer/ui.js",
+    "start": "npm run build && electron .",
+    "test": "npm run build && node --test tests/*.test.cjs",
+    "package:win": "npm run build && electron-builder --win --x64 --publish never"
+  },
+  "build": {
+    "appId": "com.froxian55.controllertomidi",
+    "productName": "Controller to MIDI",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/renderer/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-Setup-${arch}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable-${arch}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.2.2",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "minimatch": "^11.0.4"
+  }
+}

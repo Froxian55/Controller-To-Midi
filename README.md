@@ -1,51 +1,45 @@
-# Controller To MIDI
+# Controller to MIDI
 
-A utility that transforms any standard game controller, joystick, wheel, or pedal into a functional MIDI expression pedal or switch.
+Gamepad'ini, joystick'ini veya pedalını Sustain, Sostenuto ve Soft MIDI kontrollerine dönüştür.
 
-## Features
+## Windows uygulamasını indir
 
-- Universal controller support via SDL2 (XInput, DirectInput, wheels, pedals, HOTAS)
-- Learn mode: press a button or move an axis to bind it
-- 3 fixed piano-style pedals with MIDI CC numbers:
-  - Sustain (CC 64)
-  - Sostenuto (CC 66)
-  - Soft (CC 67)
-- Per-pedal settings:
-  - Analog / Threshold mode
-  - Invert axis
-  - Deadzone
-  - Threshold
-- Save/load mappings to JSON
-- Dark modern UI
+[En son sürümü ve `.exe` dosyalarını GitHub Releases sayfasında aç](https://github.com/Froxian55/Controller-To-Midi/releases/latest).
 
-## Requirements
+- **Portable**: Kurulum gerektirmeyen tek dosyalık uygulama.
+- **Setup**: Masaüstü ve Başlat menüsü kısayollarıyla normal Windows kurulumu.
 
-- .NET 6.0 SDK
-- Windows
+Uygulama MIDI erişimini yalnızca **Başlat** düğmesine bastığında ister. Windows, imzalanmamış açık kaynak uygulamalarında SmartScreen uyarısı gösterebilir.
 
-## Build & Run
+## Özellikler
 
-```powershell
-cd ControllerToMidi3
-dotnet run
-```
+- Bağlı oyun kontrolcülerini ve canlı eksen/tuş sinyallerini görüntüleme
+- MIDI çıkışı ve 1-16 arası MIDI kanalı seçimi
+- Kontrolcü girdisini öğrenme veya listeden elle seçme
+- Sustain (CC 64), Sostenuto (CC 66) ve Soft (CC 67) eşlemeleri
+- Analog/eşik modu, ters yön, ölü bölge ve eşik seviyesi
+- Bağlantı kesilince MIDI aktarımını güvenli şekilde durdurma
+- Ayarları yerel olarak kaydetme
 
-## Build
+## Geliştirme
+
+- Node.js 22 veya üzeri
+- Windows x64
 
 ```powershell
-dotnet build
+npm ci
+npm start
 ```
 
-## Usage
+Test ve Windows `.exe` paketleri:
 
-1. Select your controller from the dropdown
-2. Select your MIDI output device
-3. Set the MIDI channel (1-16)
-4. Click **Start**
-5. For each pedal, click **Bind** and press the corresponding button or move the axis on your controller
-6. Adjust deadzone, threshold, and invert as needed
-7. Click **Save** to store your mappings
+```powershell
+npm test
+npm run package:win
+```
 
-## License
+Çıktılar `release` klasörüne yazılır. GitHub Actions, `v*` etiketleri gönderildiğinde Setup ve Portable `.exe` dosyalarını otomatik olarak GitHub Release'e ekler.
+
+## Lisans
 
 MIT
