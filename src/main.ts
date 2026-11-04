@@ -1,13 +1,21 @@
-import { app, BrowserWindow, ipcMain, session } from "electron";
+import { app, BrowserWindow, ipcMain, session, shell } from "electron";
+import { autoUpdater } from "electron-updater";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { normalizeSettings } from "./shared/settings";
-import type { AppSettings } from "./shared/types";
+import type { AppSettings, UpdateStatus } from "./shared/types";
 
 const settingsPath = (): string => path.join(app.getPath("userData"), "settings.json");
 const rendererPath = path.resolve(__dirname, "..", "src", "renderer", "index.html");
+const releasesUrl = "https://github.com/Froxian55/Controller-To-Midi/releases/latest";
 let mainWindow: BrowserWindow | null = null;
+let updateDownloaded = false;
+let currentUpdateStatus: UpdateStatus = { state: "checking" };
+
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.allowPrerelease = false;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -26,6 +34,9 @@ function createWindow(): void {
   });
 
   void mainWindow.loadFile(rendererPath);
+  mainWindow.webContents.on("did-finish-load", () => {
+    sendUpdateStatus(currentUpdateStatus);
+  });
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -50,6 +61,17 @@ ipcMain.handle("settings:save", async (_event, value: unknown): Promise<void> =>
   await fs.rename(temporaryFile, file);
 });
 
+ipcMain.handle("app:version", (): string => app.getVersion());
+ipcMain.handle("updates:check", async (): Promise<UpdateStatus> => checkForUpdates());
+ipcMain.handle("updates:install", (): boolean => {
+  if (!updateDownloaded) return false;
+  autoUpdater.quitAndInstall(false, true);
+  return true;
+});
+ipcMain.handle("updates:open-download-page", async (): Promise<void> => {
+  await shell.openExternal(releasesUrl);
+});
+
 app.whenReady().then(() => {
   session.defaultSession.setPermissionCheckHandler((webContents, permission, _origin, details) => {
     return isTrustedMidiRequest(webContents, permission, details.requestingUrl, details.isMainFrame);
@@ -59,6 +81,7 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+  registerAutoUpdates();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -70,6 +93,74 @@ app.on("window-all-closed", () => {
 
 function isMissingFile(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
+function registerAutoUpdates(): void {
+  autoUpdater.on("checking-for-update", () => {
+    publishUpdateStatus({ state: "checking" });
+  });
+  autoUpdater.on("update-available", (info) => {
+    publishUpdateStatus({ state: "available", version: info.version });
+  });
+  autoUpdater.on("update-not-available", (info) => {
+    publishUpdateStatus({ state: "not-available", version: info.version });
+  });
+  autoUpdater.on("download-progress", (progress) => {
+    publishUpdateStatus({ state: "downloading", percent: progress.percent });
+  });
+  autoUpdater.on("update-downloaded", (info) => {
+    updateDownloaded = true;
+    publishUpdateStatus({ state: "downloaded", version: info.version });
+  });
+  autoUpdater.on("error", (error) => {
+    console.error("Automatic update failed:", error);
+    publishUpdateStatus({ state: "error", message: error.message });
+  });
+
+  if (!app.isPackaged) {
+    publishUpdateStatus({ state: "unsupported", message: "Updates are available in packaged builds." });
+    return;
+  }
+  if (process.env.PORTABLE_EXECUTABLE_DIR) {
+    publishUpdateStatus({ state: "unsupported", message: "Portable builds must be updated manually." });
+    return;
+  }
+
+  setTimeout(() => {
+    void checkForUpdates();
+  }, 4000);
+}
+
+async function checkForUpdates(): Promise<UpdateStatus> {
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) {
+    const message = !app.isPackaged
+      ? "Updates are available in packaged builds."
+      : "Portable builds must be updated manually.";
+    const status: UpdateStatus = { state: "unsupported", message };
+    publishUpdateStatus(status);
+    return status;
+  }
+
+  publishUpdateStatus({ state: "checking" });
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Could not check for updates:", error);
+    publishUpdateStatus({ state: "error", message });
+  }
+  return currentUpdateStatus;
+}
+
+function publishUpdateStatus(status: UpdateStatus): void {
+  currentUpdateStatus = status;
+  sendUpdateStatus(status);
+}
+
+function sendUpdateStatus(status: UpdateStatus): void {
+  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+    mainWindow.webContents.send("updates:status", status);
+  }
 }
 
 function isTrustedMidiRequest(

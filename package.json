@@ -1,6 +1,6 @@
 {
   "name": "controller-to-midi",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "author": "Froxian55",
   "description": "Turn game controllers into MIDI expression pedals and switches.",
@@ -23,15 +23,26 @@
       "package.json"
     ],
     "asar": true,
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Froxian55",
+        "repo": "Controller-To-Midi"
+      }
+    ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -55,5 +66,8 @@
   },
   "overrides": {
     "minimatch": "^11.0.4"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

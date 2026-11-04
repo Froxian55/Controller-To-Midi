@@ -29,3 +29,10 @@ export interface ControllerDevice {
 export interface InputValues {
   [sourceName: string]: number;
 }
+
+export interface UpdateStatus {
+  state: "checking" | "available" | "downloading" | "downloaded" | "not-available" | "unsupported" | "error";
+  version?: string;
+  percent?: number;
+  message?: string;
+}

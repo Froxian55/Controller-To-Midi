@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,7 +14,7 @@
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#" aria-label="Controller to MIDI ana sayfa">
+        <a class="brand" href="#" aria-label="Controller to MIDI home">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 32 32" fill="none">
               <path d="M4 17h5l3-9 5 17 4-12 2 4h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
@@ -26,23 +26,24 @@
           </span>
         </a>
         <div class="topbar-meta">
-          <span class="local-badge"><span></span> Yerel oturum</span>
+          <span class="local-badge"><span></span> LOCAL SESSION</span>
           <span class="topbar-divider"></span>
-          <span class="version-label">PEDAL STUDIO <span>01</span></span>
+          <span class="version-label" id="app-version">PEDAL STUDIO</span>
+          <button class="update-button" id="update-button" type="button" title="Check for updates">Check for updates</button>
         </div>
       </header>
 
       <section class="intro">
         <div class="intro-copy">
-          <p class="eyebrow"><span class="eyebrow-line"></span> PERFORMANS KONTROLÜ</p>
-          <h1>Kontrolcünü <em>MIDI’ye</em> dönüştür.</h1>
-          <p class="intro-description">Oyun kolundaki her eksen veya tuş, müziğinde yeni bir kontrole dönüşsün.</p>
+          <p class="eyebrow"><span class="eyebrow-line"></span> PERFORMANCE CONTROL</p>
+          <h1>Turn your controller into <em>MIDI.</em></h1>
+          <p class="intro-description">Every axis and button becomes a new way to shape your sound.</p>
         </div>
         <div class="session-state" id="session-state">
           <span class="session-state-light" id="running-dot"></span>
           <span class="session-state-copy">
-            <span class="session-state-label" id="running-status">DURDURULDU</span>
-            <span class="session-state-detail" id="session-detail">Başlamak için cihazlarını bağla</span>
+            <span class="session-state-label" id="running-status">STOPPED</span>
+            <span class="session-state-detail" id="session-detail">Connect your devices to get started</span>
           </span>
           <span class="session-state-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
         </div>
@@ -53,60 +54,60 @@
           <div class="heading-copy">
             <span class="step-number">01</span>
             <div>
-              <p class="eyebrow">ÖNCE BAĞLANTILAR</p>
-              <h2 id="setup-title">Cihazlarını hazırla</h2>
+              <p class="eyebrow">FIRST, CONNECT</p>
+              <h2 id="setup-title">Set up your devices</h2>
             </div>
           </div>
-          <button class="icon-button" id="refresh-controllers" type="button" title="Kontrolcüleri yenile" aria-label="Kontrolcüleri yenile">
+          <button class="icon-button" id="refresh-controllers" type="button" title="Refresh controllers" aria-label="Refresh controllers">
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.2 8A6.4 6.4 0 0 0 5 4.7L3.7 6M3.7 6V2.8M3.7 6h3.2M3.8 12a6.4 6.4 0 0 0 11.2 3.3l1.3-1.3m0 0v3.2m0-3.2h-3.2" /></svg>
           </button>
         </div>
         <div class="setup-grid">
           <label class="field">
-            <span class="field-label"><span class="field-index">A</span> KONTROLCÜ</span>
+            <span class="field-label"><span class="field-index">A</span> CONTROLLER</span>
             <span class="select-wrap">
               <span class="field-icon controller-icon" aria-hidden="true">⌘</span>
-              <select id="controller-select" aria-label="Kontrolcü seç"></select>
+              <select id="controller-select" aria-label="Select controller"></select>
               <span class="select-chevron" aria-hidden="true">⌄</span>
             </span>
           </label>
           <label class="field">
-            <span class="field-label"><span class="field-index">B</span> MIDI ÇIKIŞI</span>
+            <span class="field-label"><span class="field-index">B</span> MIDI OUTPUT</span>
             <span class="select-wrap">
               <span class="field-icon midi-icon" aria-hidden="true">♫</span>
-              <select id="midi-select" aria-label="MIDI çıkışı seç"></select>
+              <select id="midi-select" aria-label="Select MIDI output"></select>
               <span class="select-chevron" aria-hidden="true">⌄</span>
             </span>
           </label>
           <label class="field channel-field">
-            <span class="field-label"><span class="field-index">C</span> KANAL</span>
+            <span class="field-label"><span class="field-index">C</span> CHANNEL</span>
             <span class="channel-input-wrap">
-              <input id="channel-input" type="number" min="1" max="16" value="1" aria-label="MIDI kanalı" />
+              <input id="channel-input" type="number" min="1" max="16" value="1" aria-label="MIDI channel" />
               <span>CH</span>
             </span>
           </label>
           <div class="action-field">
             <button class="button button-primary" id="start-button" type="button">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5 3 8 5-8 5V3Z" /></svg>
-              <span>Başlat</span>
+              <span>Start</span>
             </button>
             <button class="button button-stop" id="stop-button" type="button" disabled>
-              <span class="stop-square"></span> Durdur
+              <span class="stop-square"></span> Stop
             </button>
-            <button class="button button-save" id="save-button" type="button" title="Ayarları kaydet">
+            <button class="button button-save" id="save-button" type="button" title="Save settings">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h8l2 2v10H3V2Zm2 0v4h6V2M5 14V9h6v5" /></svg>
-              Kaydet
+              Save
             </button>
           </div>
         </div>
         <div class="connection-line">
           <div class="connection-status">
             <span class="connection-indicator" id="controller-indicator"></span>
-            <span id="controller-status">Kontrolcü bekleniyor</span>
+            <span id="controller-status">Waiting for controller</span>
           </div>
           <span class="connection-divider"></span>
           <span class="midi-status-icon">♫</span>
-          <span id="midi-status">MIDI çıkışı aranıyor</span>
+          <span id="midi-status">Waiting for MIDI output</span>
           <span class="connection-spacer"></span>
           <span class="unsaved-status" id="save-status" role="status"></span>
         </div>
@@ -118,57 +119,57 @@
             <div class="heading-copy">
               <span class="step-number">02</span>
               <div>
-                <p class="eyebrow">SANA ÖZEL</p>
-                <h2 id="pedals-title">Pedal eşlemeleri</h2>
+                <p class="eyebrow">MAKE IT YOURS</p>
+                <h2 id="pedals-title">Pedal mappings</h2>
               </div>
             </div>
-            <span class="mapping-counter"><span id="mapping-count">0</span><span> / 3 eşlendi</span></span>
+            <span class="mapping-counter"><span id="mapping-count">0</span><span> / 3 mapped</span></span>
           </div>
-          <p class="section-description">Bir tuş veya eksen seç. Değerleri canlı gör, MIDI tepkisini anında şekillendir.</p>
+          <p class="section-description">Choose a button or axis. See live input and shape your MIDI response.</p>
           <div id="pedal-list" class="pedal-list"></div>
         </section>
 
         <aside class="monitor-panel panel" aria-labelledby="monitor-title">
           <div class="monitor-heading">
             <div>
-              <p class="eyebrow">CANLI GİRDİ</p>
-              <h2 id="monitor-title">Sinyal monitörü</h2>
+              <p class="eyebrow">LIVE INPUT</p>
+              <h2 id="monitor-title">Signal monitor</h2>
             </div>
-            <span class="live-badge"><span></span> CANLI</span>
+            <span class="live-badge"><span></span> LIVE</span>
           </div>
-          <p class="monitor-description" id="monitor-description">Kontrolcünü bağla; eksen ve tuş sinyallerin burada görünsün.</p>
+          <p class="monitor-description" id="monitor-description">Connect a controller to see its axes and buttons here.</p>
           <div class="monitor-summary">
             <div class="summary-item">
               <span class="summary-icon controller-summary-icon">⌘</span>
-              <span><b id="input-count">—</b><small>GİRDİ</small></span>
+              <span><b id="input-count">—</b><small>INPUTS</small></span>
             </div>
             <span class="summary-divider"></span>
             <div class="summary-item">
               <span class="summary-icon mapping-summary-icon">↗</span>
-              <span><b id="monitor-mapping-count">0</b><small>EŞLEME</small></span>
+              <span><b id="monitor-mapping-count">0</b><small>MAPPED</small></span>
             </div>
           </div>
           <div class="input-list-heading">
-            <span>GİRDİLER</span>
-            <span>DEĞER</span>
+            <span>INPUTS</span>
+            <span>VALUE</span>
           </div>
           <div class="input-monitor" id="input-monitor"></div>
           <div class="empty-monitor" id="empty-monitor">
             <span class="empty-monitor-icon">⌁</span>
-            <span>Henüz sinyal yok</span>
-            <small>Bir oyun kolu bağladığında girdiler burada belirecek.</small>
+            <span>No signal yet</span>
+            <small>Connect a game controller to see its inputs here.</small>
           </div>
-          <div class="monitor-footnote"><span class="footnote-dot"></span> Sinyaller cihazından yerel olarak okunur</div>
+          <div class="monitor-footnote"><span class="footnote-dot"></span> Inputs are read locally from your device</div>
         </aside>
       </div>
 
       <footer class="footer">
-        <div class="midi-legend" aria-label="Sabit MIDI kontrol numaraları">
+        <div class="midi-legend" aria-label="Fixed MIDI control numbers">
           <span class="legend-item"><span class="legend-key">64</span> Sustain</span>
           <span class="legend-item"><span class="legend-key">66</span> Sostenuto</span>
           <span class="legend-item"><span class="legend-key">67</span> Soft</span>
         </div>
-        <span class="footer-note"><span class="footer-lock">⌑</span> Ayarların bu bilgisayarda saklanır</span>
+        <span class="footer-note"><span class="footer-lock">⌑</span> Your settings stay on this computer</span>
       </footer>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </main>

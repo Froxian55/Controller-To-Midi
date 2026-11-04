@@ -1,5 +1,5 @@
 import { createDefaultSettings, normalizeSettings } from "../shared/settings";
-import type { AppSettings, ControllerDevice, InputValues } from "../shared/types";
+import type { AppSettings, ControllerDevice, InputValues, UpdateStatus } from "../shared/types";
 import { calculateValue } from "../shared/processing";
 
 const $ = <T extends HTMLElement>(id: string): T => {
@@ -30,6 +30,8 @@ const mappingCount = $("mapping-count");
 const monitorMappingCount = $("monitor-mapping-count");
 const sessionState = $("session-state");
 const sessionDetail = $("session-detail");
+const updateButton = $("update-button") as HTMLButtonElement;
+const appVersion = $("app-version");
 
 let settings: AppSettings = createDefaultSettings();
 let controllers: ControllerDevice[] = [];
@@ -41,12 +43,20 @@ let learningBaseline: InputValues = {};
 let lastSent = new Map<number, number>();
 let toastTimer: number | undefined;
 let monitorSignature = "";
+let updateStatus: UpdateStatus = { state: "checking" };
 
 async function initialize(): Promise<void> {
+  window.desktop.onUpdateStatus(renderUpdateStatus);
+  updateButton.addEventListener("click", () => void handleUpdateAction());
+  void window.desktop.getAppVersion().then((version) => {
+    appVersion.textContent = `VERSION ${version}`;
+  }).catch((error: unknown) => {
+    console.error("Could not read app version:", error);
+  });
   try {
     settings = normalizeSettings(await window.desktop.loadSettings());
   } catch (error) {
-    showToast(`Ayarlar yüklenemedi: ${errorMessage(error)}`, true);
+    showToast(`Could not load settings: ${errorMessage(error)}`, true);
   }
 
   channelInput.value = String(settings.channel);
@@ -54,8 +64,8 @@ async function initialize(): Promise<void> {
   refreshControllers();
   setMidiOptions([]);
   const midiPlaceholder = midiSelect.options.item(0);
-  if (midiPlaceholder) midiPlaceholder.textContent = "Başlat'a basınca MIDI aranır";
-  midiStatus.textContent = "MIDI izni için Başlat'a bas";
+  if (midiPlaceholder) midiPlaceholder.textContent = "MIDI is checked when you click Start";
+  midiStatus.textContent = "Click Start to request MIDI access";
   window.setInterval(tick, 16);
   window.addEventListener("gamepadconnected", refreshControllers);
   window.addEventListener("gamepaddisconnected", refreshControllers);
@@ -96,13 +106,13 @@ function refreshControllers(): void {
   controllerSelect.replaceChildren();
 
   if (controllers.length === 0) {
-    addOption(controllerSelect, "", "Kontrolcü bulunamadı");
+    addOption(controllerSelect, "", "No controller found");
     controllerSelect.disabled = true;
     updateControllerStatus(null);
     renderPedals();
     if (running) {
       stop();
-      showToast("Kontrolcü bağlantısı kesildi; MIDI aktarımı durduruldu.", true);
+      showToast("Controller disconnected; MIDI output stopped.", true);
     }
     updateOverview();
     return;
@@ -134,15 +144,15 @@ function getSelectedController(): Gamepad | null {
 }
 
 function updateControllerStatus(controller: Gamepad | null): void {
-  controllerStatus.textContent = controller ? `${controller.id || `Kontrolcü ${controller.index + 1}`} bağlandı` : "Kontrolcü bekleniyor";
+  controllerStatus.textContent = controller ? `${controller.id || `Controller ${controller.index + 1}`} connected` : "Waiting for controller";
   controllerIndicator.classList.toggle("is-connected", controller !== null);
 }
 
 async function connectMidiAccess(): Promise<void> {
   if (!("requestMIDIAccess" in navigator)) {
     setMidiOptions([]);
-    midiStatus.textContent = "Web MIDI desteklenmiyor";
-    throw new Error("Bu Electron/Chromium sürümünde Web MIDI kullanılamıyor.");
+    midiStatus.textContent = "Web MIDI is not supported";
+    throw new Error("Web MIDI is unavailable in this Electron/Chromium version.");
   }
 
   if (!midiAccess) {
@@ -164,7 +174,7 @@ function refreshMidiDevices(): void {
     settings.selectedMidiDevice = outputs[0].id;
   }
   if (midiOutput && !outputs.some((output) => output.id === midiOutput?.id)) {
-    showToast("MIDI çıkışı bağlantısı kesildi.", true);
+    showToast("MIDI output disconnected.", true);
     stop();
   }
   updateMidiStatus();
@@ -174,7 +184,7 @@ function refreshMidiDevices(): void {
 function setMidiOptions(outputs: MIDIOutput[]): void {
   midiSelect.replaceChildren();
   if (outputs.length === 0) {
-    addOption(midiSelect, "", "MIDI çıkışı bulunamadı");
+    addOption(midiSelect, "", "No MIDI output found");
     midiSelect.disabled = true;
     return;
   }
@@ -187,10 +197,10 @@ function setMidiOptions(outputs: MIDIOutput[]): void {
 function updateMidiStatus(): void {
   const selected = midiAccess?.outputs.get(midiSelect.value);
   midiStatus.textContent = midiOutput
-    ? `${midiOutput.name || "MIDI çıkışı"} bağlı`
+    ? `${midiOutput.name || "MIDI output"} connected`
     : selected
-      ? `${selected.name || "MIDI çıkışı"} hazır`
-      : "MIDI çıkışı bekleniyor";
+      ? `${selected.name || "MIDI output"} ready`
+      : "Waiting for MIDI output";
 }
 
 function addOption(select: HTMLSelectElement, value: string, label: string): void {
@@ -204,11 +214,11 @@ async function start(): Promise<void> {
   if (running) return;
   try {
     const controller = getSelectedController();
-    if (!controller) throw new Error("Önce bir kontrolcü bağlayıp seç.");
+    if (!controller) throw new Error("Connect and select a controller first.");
 
     await connectMidiAccess();
     const selected = midiAccess?.outputs.get(midiSelect.value);
-    if (!selected) throw new Error("Kullanılabilir bir MIDI çıkışı seç.");
+    if (!selected) throw new Error("Select an available MIDI output.");
     await selected.open();
     midiOutput = selected;
     settings.selectedMidiDevice = selected.id;
@@ -217,7 +227,7 @@ async function start(): Promise<void> {
     updateRunningState();
     updateMidiStatus();
     updateOverview();
-    showToast("MIDI çıkışı başlatıldı.");
+    showToast("MIDI output started.");
   } catch (error) {
     midiOutput = null;
     updateMidiStatus();
@@ -236,7 +246,7 @@ function stop(sendReset = true): void {
   lastSent.clear();
 
   if (midiOutput) {
-    void midiOutput.close().catch((error: unknown) => showToast(`MIDI çıkışı kapatılamadı: ${errorMessage(error)}`, true));
+    void midiOutput.close().catch((error: unknown) => showToast(`Could not close MIDI output: ${errorMessage(error)}`, true));
   }
   midiOutput = null;
   for (const pedal of settings.pedals) setLiveValue(pedal.cc, 0);
@@ -249,11 +259,11 @@ async function save(): Promise<void> {
   try {
     readControls();
     await window.desktop.saveSettings(settings);
-    saveStatus.textContent = "Ayarlar kaydedildi";
+    saveStatus.textContent = "Settings saved";
     saveStatus.classList.remove("is-dirty");
     window.setTimeout(() => { saveStatus.textContent = ""; }, 1800);
   } catch (error) {
-    showToast(`Ayarlar kaydedilemedi: ${errorMessage(error)}`, true);
+    showToast(`Could not save settings: ${errorMessage(error)}`, true);
   }
 }
 
@@ -322,36 +332,36 @@ function renderPedals(): void {
     learn.type = "button";
     learn.className = "learn-button";
     learn.dataset.learnIndex = String(index);
-    learn.textContent = learningIndex === index ? "Dinleniyor…" : "Girdi öğren";
+    learn.textContent = learningIndex === index ? "Listening…" : "Learn input";
     learn.classList.toggle("is-learning", learningIndex === index);
     learn.addEventListener("click", () => beginLearning(index));
     const source = document.createElement("span");
     source.className = gamepad ? "source-name is-hidden" : "source-name";
     source.dataset.sourceIndex = String(index);
     source.textContent = pedal.sourceName
-      ? `${pedal.sourceType === "axis" ? "Eksen" : "Tuş"} ${pedal.sourceName.slice(pedal.sourceName.indexOf(" ") + 1)}`
-      : "Henüz girdi eşlenmedi";
+      ? `${pedal.sourceType === "axis" ? "Axis" : "Button"} ${pedal.sourceName.slice(pedal.sourceName.indexOf(" ") + 1)}`
+      : "No input mapped yet";
     const sourceSelect = document.createElement("select");
     sourceSelect.className = "source-select";
-    sourceSelect.setAttribute("aria-label", `${pedal.name} için kontrolcü girdisi`);
-    addOption(sourceSelect, "", "Girdi seç");
+    sourceSelect.setAttribute("aria-label", `${pedal.name} controller input`);
+    addOption(sourceSelect, "", "Select input");
     for (const option of options) {
-      addOption(sourceSelect, option, option.startsWith("Axis ") ? `Eksen ${option.slice(5)}` : `Tuş ${option.slice(7)}`);
+      addOption(sourceSelect, option, option.startsWith("Axis ") ? `Axis ${option.slice(5)}` : `Button ${option.slice(7)}`);
     }
     if (pedal.sourceName && !options.includes(pedal.sourceName)) {
       addOption(
         sourceSelect,
         pedal.sourceName,
-        `${pedal.sourceName.startsWith("Axis ") ? "Eksen" : "Tuş"} ${pedal.sourceName.slice(pedal.sourceName.indexOf(" ") + 1)} (çevrimdışı)`
+        `${pedal.sourceName.startsWith("Axis ") ? "Axis" : "Button"} ${pedal.sourceName.slice(pedal.sourceName.indexOf(" ") + 1)} (offline)`
       );
     }
     sourceSelect.value = pedal.sourceName;
     sourceSelect.addEventListener("change", () => setPedalSource(index, sourceSelect.value));
     const mode = document.createElement("select");
     mode.className = "mode-select";
-    mode.setAttribute("aria-label", `${pedal.name} çıkış modu`);
+    mode.setAttribute("aria-label", `${pedal.name} output mode`);
     addOption(mode, "analog", "Analog");
-    addOption(mode, "threshold", "Eşik");
+    addOption(mode, "threshold", "Threshold");
     mode.value = pedal.mode;
     mode.addEventListener("change", () => {
       pedal.mode = mode.value === "threshold" ? "threshold" : "analog";
@@ -362,24 +372,24 @@ function renderPedals(): void {
     const invert = document.createElement("input");
     invert.type = "checkbox";
     invert.className = "invert-input";
-    invert.setAttribute("aria-label", `${pedal.name} yönünü ters çevir`);
+    invert.setAttribute("aria-label", `Invert ${pedal.name} direction`);
     invert.checked = pedal.invert;
     invert.addEventListener("change", () => {
       pedal.invert = invert.checked;
       markDirty();
     });
-    invertLabel.append(invert, document.createTextNode("Ters"));
+    invertLabel.append(invert, document.createTextNode("Invert"));
     controls.append(learn, source, sourceSelect, mode, invertLabel);
 
     const sliders = document.createElement("div");
     sliders.className = "sliders";
     sliders.append(
-      createSlider("Ölü bölge", "deadzone", index, pedal.deadzonePct, 0, 50, "%", (value) => { pedal.deadzonePct = value; }),
-      createSlider("Eşik seviyesi", "threshold", index, pedal.thresholdPct, 5, 99, "%", (value) => { pedal.thresholdPct = value; })
+      createSlider("Dead zone", "deadzone", index, pedal.deadzonePct, 0, 50, "%", (value) => { pedal.deadzonePct = value; }),
+      createSlider("Threshold", "threshold", index, pedal.thresholdPct, 5, 99, "%", (value) => { pedal.thresholdPct = value; })
     );
     if (options.length === 0) {
       learn.disabled = true;
-      learn.title = "Girdi eşlemek için önce bir kontrolcü bağla";
+      learn.title = "Connect a controller before mapping an input";
       sourceSelect.disabled = true;
     }
     if (pedal.sourceType === "button") mode.disabled = true;
@@ -462,7 +472,7 @@ function beginLearning(index: number): void {
   }
   const gamepad = getSelectedController();
   if (!gamepad) {
-    showToast("Girdi öğrenmek için önce bir kontrolcü bağla ve seç.", true);
+    showToast("Connect and select a controller to learn an input.", true);
     return;
   }
 
@@ -470,7 +480,7 @@ function beginLearning(index: number): void {
   learningBaseline = readInputs(gamepad);
   learningIndex = index;
   renderPedals();
-  sessionDetail.textContent = `${settings.pedals[index].name} için bir tuşa bas veya ekseni hareket ettir`;
+  sessionDetail.textContent = `Press a button or move an axis for ${settings.pedals[index].name}`;
 }
 
 function cancelLearning(): void {
@@ -490,7 +500,7 @@ function tick(): void {
     if (running) {
       processPedals({});
       stop();
-      showToast("Kontrolcü bağlantısı kesildi; MIDI aktarımı durduruldu.", true);
+      showToast("Controller disconnected; MIDI output stopped.", true);
     }
     updateOverview();
     return;
@@ -526,7 +536,7 @@ function detectLearnedInput(gamepad: Gamepad, values: InputValues): void {
     learningBaseline = {};
     renderPedals();
     markDirty();
-    showToast(`${sourceName.startsWith("Axis ") ? "Eksen" : "Tuş"} eşlendi.`);
+    showToast(`${sourceName.startsWith("Axis ") ? "Axis" : "Button"} mapped.`);
     return;
   }
   updateControllerStatus(gamepad);
@@ -547,7 +557,7 @@ function sendCc(cc: number, value: number): void {
   try {
     midiOutput.send([0xb0 | (settings.channel - 1), cc, value]);
   } catch (error) {
-    showToast(`MIDI mesajı gönderilemedi: ${errorMessage(error)}`, true);
+    showToast(`Could not send MIDI message: ${errorMessage(error)}`, true);
     stop(false);
   }
 }
@@ -562,7 +572,7 @@ function setLiveValue(cc: number, value: number): void {
 function updateRunningState(): void {
   startButton.disabled = running;
   stopButton.disabled = !running;
-  runningStatus.textContent = running ? "ÇALIŞIYOR" : "DURDURULDU";
+  runningStatus.textContent = running ? "RUNNING" : "STOPPED";
   runningDot.classList.toggle("is-running", running);
   sessionState.classList.toggle("is-running", running);
 }
@@ -574,22 +584,67 @@ function updateOverview(): void {
   monitorMappingCount.textContent = String(mapped);
 
   if (running) {
-    sessionDetail.textContent = "Kontrolcü verisi MIDI’ye aktarılıyor";
+    sessionDetail.textContent = "Controller data is being sent to MIDI";
   } else if (learningIndex !== null) {
-    sessionDetail.textContent = `${settings.pedals[learningIndex].name} girdisi bekleniyor`;
+    sessionDetail.textContent = `Waiting for ${settings.pedals[learningIndex].name} input`;
   } else if (!connected) {
-    sessionDetail.textContent = "Başlamak için kontrolcünü bağla";
+    sessionDetail.textContent = "Connect a controller to get started";
   } else if (mapped < settings.pedals.length) {
-    sessionDetail.textContent = `${settings.pedals.length - mapped} pedal girdisi eşlenmeyi bekliyor`;
+    sessionDetail.textContent = `${settings.pedals.length - mapped} pedal input(s) left to map`;
   } else {
-    sessionDetail.textContent = "Her şey hazır, müziğe başlayabilirsin";
+    sessionDetail.textContent = "All set. Ready to make music";
   }
 
   startButton.title = !connected
-    ? "Başlamak için önce bir kontrolcü bağla"
+    ? "Connect a controller before starting"
     : !midiSelect.value
-      ? "Başlamak için bir MIDI çıkışı seç"
-      : "MIDI aktarımını başlat";
+      ? "Select a MIDI output before starting"
+      : "Start MIDI output";
+}
+
+function renderUpdateStatus(status: UpdateStatus): void {
+  updateStatus = status;
+  updateButton.disabled = status.state === "checking" || status.state === "downloading" || status.state === "available";
+  switch (status.state) {
+    case "checking":
+      updateButton.textContent = "Checking…";
+      break;
+    case "available":
+      updateButton.textContent = "Update found";
+      break;
+    case "downloading":
+      updateButton.textContent = `Downloading ${Math.round(status.percent ?? 0)}%`;
+      break;
+    case "downloaded":
+      updateButton.textContent = "Restart to update";
+      break;
+    case "not-available":
+      updateButton.textContent = "Up to date";
+      break;
+    case "unsupported":
+      updateButton.textContent = status.message?.startsWith("Portable") ? "Get latest version" : "Check for updates";
+      break;
+    case "error":
+      updateButton.textContent = "Retry update check";
+      break;
+  }
+  updateButton.title = status.message ?? updateButton.textContent;
+  updateButton.setAttribute("aria-label", updateButton.textContent);
+}
+
+async function handleUpdateAction(): Promise<void> {
+  try {
+    if (updateStatus.state === "downloaded") {
+      const installing = await window.desktop.installUpdate();
+      if (!installing) showToast("The update is not ready to install yet.", true);
+    } else if (updateStatus.state === "unsupported") {
+      await window.desktop.openDownloadPage();
+    } else {
+      renderUpdateStatus(await window.desktop.checkForUpdates());
+    }
+  } catch (error) {
+    showToast(`Update action failed: ${errorMessage(error)}`, true);
+  }
 }
 
 function renderInputMonitor(gamepad: Gamepad | null, values: InputValues): void {
@@ -599,7 +654,7 @@ function renderInputMonitor(gamepad: Gamepad | null, values: InputValues): void 
       inputMonitor.replaceChildren();
     }
     inputCount.textContent = "—";
-    monitorDescription.textContent = "Kontrolcünü bağla; eksen ve tuş sinyallerin burada görünsün.";
+    monitorDescription.textContent = "Connect a controller to see its axes and buttons here.";
     emptyMonitor.hidden = false;
     return;
   }
@@ -616,10 +671,10 @@ function renderInputMonitor(gamepad: Gamepad | null, values: InputValues): void 
       row.dataset.inputName = sourceName;
       const kind = document.createElement("span");
       kind.className = "input-kind";
-      kind.textContent = isAxis ? "EKSEN" : "TUŞ";
+      kind.textContent = isAxis ? "AXIS" : "BUTTON";
       const label = document.createElement("span");
       label.className = "input-label";
-      label.textContent = isAxis ? `Eksen ${sourceName.slice(5)}` : `Tuş ${sourceName.slice(7)}`;
+      label.textContent = isAxis ? `Axis ${sourceName.slice(5)}` : `Button ${sourceName.slice(7)}`;
       const track = document.createElement("span");
       track.className = "input-track";
       const fill = document.createElement("span");
@@ -634,7 +689,7 @@ function renderInputMonitor(gamepad: Gamepad | null, values: InputValues): void 
   }
 
   inputCount.textContent = String(sources.length);
-  monitorDescription.textContent = `${gamepad.id || `Kontrolcü ${gamepad.index + 1}`} üzerinden okunan anlık girdiler.`;
+  monitorDescription.textContent = `Live inputs from ${gamepad.id || `Controller ${gamepad.index + 1}`}.`;
   emptyMonitor.hidden = sources.length > 0;
   for (const sourceName of sources) {
     const row = inputMonitor.querySelector<HTMLElement>(`[data-input-name="${sourceName}"]`);
@@ -652,7 +707,7 @@ function renderInputMonitor(gamepad: Gamepad | null, values: InputValues): void 
 }
 
 function markDirty(): void {
-  saveStatus.textContent = "Kaydedilmedi";
+  saveStatus.textContent = "Unsaved changes";
   saveStatus.classList.add("is-dirty");
 }
 
@@ -676,9 +731,9 @@ function errorMessage(error: unknown): string {
 
 function getMidiStartError(error: unknown): string {
   if (error instanceof DOMException && error.name === "NotAllowedError") {
-    return "MIDI izni verilmedi. Başlat'a yeniden basıp izin isteğini onayla.";
+    return "MIDI access was denied. Click Start again and approve the permission request.";
   }
-  return `Başlatılamadı: ${errorMessage(error)}`;
+  return `Could not start: ${errorMessage(error)}`;
 }
 
 void initialize();

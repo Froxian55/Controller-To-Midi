@@ -95,6 +95,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .topbar-divider { width: 1px; height: 20px; background: var(--border); }
 .version-label { color: var(--faint); font: 8px var(--mono); letter-spacing: 1px; }
 .version-label span { margin-left: 3px; color: #a6ac9c; }
+.update-button {
+  padding: 7px 9px;
+  border: 1px solid #414a37;
+  border-radius: 7px;
+  color: var(--accent);
+  background: #232a1e;
+  font: 8px var(--mono);
+  letter-spacing: .2px;
+  cursor: pointer;
+}
+.update-button:hover:not(:disabled) { border-color: var(--accent); background: #2a3322; }
+.update-button:disabled { color: var(--muted); cursor: wait; }
 
 .intro { justify-content: space-between; gap: 24px; padding: 39px 0 25px; }
 .eyebrow {

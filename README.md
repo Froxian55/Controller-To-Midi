@@ -1,29 +1,29 @@
 # Controller to MIDI
 
-Gamepad'ini, joystick'ini veya pedalını Sustain, Sostenuto ve Soft MIDI kontrollerine dönüştür.
+Turn your game controller, joystick, or pedal into Sustain, Sostenuto, and Soft MIDI controls.
 
-## Windows uygulamasını indir
+## Download for Windows
 
-[En son sürümü ve `.exe` dosyalarını GitHub Releases sayfasında aç](https://github.com/Froxian55/Controller-To-Midi/releases/latest).
+Get the latest version and `.exe` files from the [GitHub Releases page](https://github.com/Froxian55/Controller-To-Midi/releases/latest).
 
-- **Portable**: Kurulum gerektirmeyen tek dosyalık uygulama.
-- **Setup**: Masaüstü ve Başlat menüsü kısayollarıyla normal Windows kurulumu.
+- **Portable**: A single executable; no installation required. Portable builds do not update automatically. Use **Check for updates** to open the latest release page and download the new version.
+- **Setup**: A standard Windows installation with Desktop and Start menu shortcuts. Installed builds check for updates automatically, download them in the background, and prompt you to restart to install.
 
-Uygulama MIDI erişimini yalnızca **Başlat** düğmesine bastığında ister. Windows, imzalanmamış açık kaynak uygulamalarında SmartScreen uyarısı gösterebilir.
+The app requests MIDI access only after you click **Start**. Windows may show a SmartScreen warning for unsigned open-source apps.
 
-## Özellikler
+## Features
 
-- Bağlı oyun kontrolcülerini ve canlı eksen/tuş sinyallerini görüntüleme
-- MIDI çıkışı ve 1-16 arası MIDI kanalı seçimi
-- Kontrolcü girdisini öğrenme veya listeden elle seçme
-- Sustain (CC 64), Sostenuto (CC 66) ve Soft (CC 67) eşlemeleri
-- Analog/eşik modu, ters yön, ölü bölge ve eşik seviyesi
-- Bağlantı kesilince MIDI aktarımını güvenli şekilde durdurma
-- Ayarları yerel olarak kaydetme
+- View connected game controllers and live axis/button signals
+- Select a MIDI output and MIDI channel (1–16)
+- Learn controller inputs or select them from a list
+- Map Sustain (CC 64), Sostenuto (CC 66), and Soft (CC 67)
+- Configure analog/threshold mode, inversion, dead zone, and threshold
+- Safely stop MIDI output when a controller disconnects
+- Save settings locally
 
-## Geliştirme
+## Development
 
-- Node.js 22 veya üzeri
+- Node.js 22 or later
 - Windows x64
 
 ```powershell
@@ -31,15 +31,15 @@ npm ci
 npm start
 ```
 
-Test ve Windows `.exe` paketleri:
+Run tests and build Windows `.exe` packages:
 
 ```powershell
 npm test
 npm run package:win
 ```
 
-Çıktılar `release` klasörüne yazılır. GitHub Actions, `v*` etiketleri gönderildiğinde Setup ve Portable `.exe` dosyalarını otomatik olarak GitHub Release'e ekler.
+Build artifacts are written to the `release` directory. GitHub Actions automatically builds and attaches the Setup and Portable `.exe` files to a GitHub Release when a `v*` tag is pushed.
 
-## Lisans
+## License
 
 MIT
