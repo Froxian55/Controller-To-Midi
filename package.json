@@ -1,6 +1,6 @@
 {
   "name": "controller-to-midi",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "author": "Froxian55",
   "description": "Turn game controllers into MIDI expression pedals and switches.",
@@ -47,7 +47,7 @@
       ]
     },
     "nsis": {
-      "artifactName": "${productName}-${version}-Setup-${arch}.${ext}",
+      "artifactName": "Controller-to-MIDI-${version}-Setup-${arch}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
@@ -55,7 +55,7 @@
       "createStartMenuShortcut": true
     },
     "portable": {
-      "artifactName": "${productName}-${version}-Portable-${arch}.${ext}"
+      "artifactName": "Controller-to-MIDI-${version}-Portable-${arch}.${ext}"
     }
   },
   "devDependencies": {
